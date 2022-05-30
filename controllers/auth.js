@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const { generarJWT } = require('../helpers/jwt')
 
 const crearUsuario = async(req, res = response) => {
-  const { email, name, password } = req.body;
+const { email, name, password } = req.body;
   try {
     //Verificar que no exista el email
     const usuario = await Usuario.findOne({ email });
@@ -36,6 +36,7 @@ const crearUsuario = async(req, res = response) => {
       ok: true,
       name,
       uid: dbUser.id,
+      email:dbUser.email,
       token
     });
 
@@ -90,6 +91,7 @@ res.json({
   ok: true,
   uid: dbUser.id,
   name: dbUser.name,
+  email: dbUser.email,
   token
 });
 
@@ -105,15 +107,26 @@ res.json({
 }
 const revalidarToken = async (req, res) => {
 
-  const { name, uid } = req || {};
+  const {  uid } = req || {};
 
-  const newToken = await generarJWT(uid,name);
+  //Leer de la base de datos
+  const dbUser = await Usuario.findById(uid );
+  if ( !dbUser ){
+    return res.status(400).json({
+      ok: false,
+      msg: 'El usuario no existe'
+    });
+  }
+
+
+  const newToken = await generarJWT(uid,dbUser.name);
 
   return res.json({
     ok: true,
     msg: 'Renew',
-    name,
+    name:dbUser.name,
     uid,
+    email:dbUser.email,
     token:newToken
   });
 }
